@@ -1,0 +1,13 @@
+{
+  "retrieval": {
+    "n": 18,
+    "recall_at_k": {
+      "1": 0.944,
+      "3": 0.944,
+      "5": 0.944
+    },
+    "mrr": 0.944,
+    "retrieval_latency_ms_mean": 22.3,
+    "retrieval_latency_ms_p95": 36.5
+  }
+}
