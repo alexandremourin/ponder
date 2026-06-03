@@ -24,7 +24,9 @@ confident, and *wrong* answer.
   for another corrective pass if it's weak.
 
 <p align="center">
-  <img src="assets/ui-preview.svg" alt="Ponder UI — reasoning timeline, streamed answer, and sources" width="780">
+  <img src="assets/ui-1-reasoning.png" alt="Ponder UI — reasoning timeline and grounded answer" width="780">
+  <br><br>
+  <img src="assets/ui-2-sources.png" alt="Ponder UI — full answer with cited sources" width="780">
 </p>
 
 > The live app streams the answer token-by-token and reveals each reasoning step
