@@ -136,11 +136,21 @@ corpus, with `BAAI/bge-small-en-v1.5` embeddings on CPU.
 question) lands at rank 6 with vanilla top-5 retrieval — exactly the case
 Ponder's corrective rewrite loop is designed to recover.
 
-**Answer quality (end-to-end):** `eval.py` also reports **accuracy** (LLM-as-judge
-against reference answers), **mean judge score**, **latency**, and **cost per
-query** (computed from real token usage). These require an LLM call per question,
-so run `make eval` with your own key to reproduce them; results are written to
-`assets/eval_results.json` and folded into the chart above.
+**Answer quality (end-to-end, measured with `make eval`):**
+
+| Metric                  | Value            |
+|-------------------------|------------------|
+| Accuracy (LLM-as-judge) | **1.00** (18/18) |
+| Mean judge score        | **0.99**         |
+| Answer source-hit rate  | **100%**         |
+| End-to-end latency      | ~13.7 s / query  |
+| Cost                    | ~$0.006 / query  |
+
+> **Honest caveat:** the eval questions are generated from the corpus, so this is an
+> **in-domain** benchmark — real-world accuracy would be lower. It exists to catch
+> regressions and prove answers stay grounded in sources, not to claim 100% in the wild.
+
+Reproduce with `make eval` (needs your key); raw numbers in `assets/eval_results.json`.
 
 ---
 

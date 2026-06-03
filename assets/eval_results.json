@@ -7,7 +7,222 @@
       "5": 0.944
     },
     "mrr": 0.944,
-    "retrieval_latency_ms_mean": 22.3,
-    "retrieval_latency_ms_p95": 36.5
+    "retrieval_latency_ms_mean": 39.7,
+    "retrieval_latency_ms_p95": 67.0
+  },
+  "answers": {
+    "accuracy": 1.0,
+    "mean_judge_score": 0.994,
+    "answer_source_hit_rate": 1.0,
+    "e2e_latency_s_mean": 13.69,
+    "cost_usd_per_query_mean": 0.00607,
+    "cost_usd_total": 0.1092,
+    "details": [
+      {
+        "question": "What are reflection tokens in Self-RAG and what do they decide?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "self-rag.md"
+        ],
+        "gold_sources": [
+          "self-rag.md"
+        ]
+      },
+      {
+        "question": "Which MCP transport runs the server as a subprocess and communicates over standard input and output?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "mcp-architecture.md",
+          "mcp-security.md"
+        ],
+        "gold_sources": [
+          "mcp-architecture.md"
+        ]
+      },
+      {
+        "question": "How does Reciprocal Rank Fusion score a document across multiple ranked lists?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "rag-fusion.md",
+          "hybrid-search.md"
+        ],
+        "gold_sources": [
+          "rag-fusion.md"
+        ]
+      },
+      {
+        "question": "What are the three confidence states a CRAG retrieval evaluator can output, and what action does each trigger?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "corrective-rag.md"
+        ],
+        "gold_sources": [
+          "corrective-rag.md"
+        ]
+      },
+      {
+        "question": "What is the repeating pattern a ReAct agent emits in its loop?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "react-agents.md",
+          "llm-agents-survey.md"
+        ],
+        "gold_sources": [
+          "react-agents.md"
+        ]
+      },
+      {
+        "question": "What are the three components of the Reflexion loop?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "reflexion.md"
+        ],
+        "gold_sources": [
+          "reflexion.md"
+        ]
+      },
+      {
+        "question": "How does Toolformer decide which API calls to keep when building its training data?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "toolformer.md"
+        ],
+        "gold_sources": [
+          "toolformer.md"
+        ]
+      },
+      {
+        "question": "Should the BGE query instruction prefix be applied to queries, documents, or both?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "bge-embeddings.md"
+        ],
+        "gold_sources": [
+          "bge-embeddings.md"
+        ]
+      },
+      {
+        "question": "What do the M and ef parameters control in an HNSW index?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "hnsw.md"
+        ],
+        "gold_sources": [
+          "hnsw.md"
+        ]
+      },
+      {
+        "question": "Why is a cross-encoder more accurate but slower than a bi-encoder for ranking?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "reranking.md"
+        ],
+        "gold_sources": [
+          "reranking.md"
+        ]
+      },
+      {
+        "question": "What is the core trade-off between small and large chunks in RAG?",
+        "correct": true,
+        "score": 0.9,
+        "cited_sources": [
+          "chunking-strategies.md",
+          "context-windows.md"
+        ],
+        "gold_sources": [
+          "chunking-strategies.md"
+        ]
+      },
+      {
+        "question": "Who controls MCP tools versus resources versus prompts?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "mcp-primitives.md"
+        ],
+        "gold_sources": [
+          "mcp-primitives.md"
+        ]
+      },
+      {
+        "question": "What does recall@k measure in retrieval evaluation?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "evaluation-of-rag.md"
+        ],
+        "gold_sources": [
+          "evaluation-of-rag.md"
+        ]
+      },
+      {
+        "question": "What biases affect LLM-as-a-judge evaluations?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "llm-as-judge.md"
+        ],
+        "gold_sources": [
+          "llm-as-judge.md"
+        ]
+      },
+      {
+        "question": "How does self-consistency improve chain-of-thought reasoning?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "self-consistency.md",
+          "chain-of-thought.md"
+        ],
+        "gold_sources": [
+          "self-consistency.md"
+        ]
+      },
+      {
+        "question": "What is the 'lost in the middle' effect in long context windows?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "context-windows.md"
+        ],
+        "gold_sources": [
+          "context-windows.md"
+        ]
+      },
+      {
+        "question": "How can prompt injection happen through MCP tool results, and how is it mitigated?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "mcp-security.md",
+          "mcp-primitives.md"
+        ],
+        "gold_sources": [
+          "mcp-security.md"
+        ]
+      },
+      {
+        "question": "When should you use RAG versus fine-tuning to adapt a model?",
+        "correct": true,
+        "score": 1.0,
+        "cited_sources": [
+          "fine-tuning-vs-rag.md",
+          "retrieval-augmented-generation.md"
+        ],
+        "gold_sources": [
+          "fine-tuning-vs-rag.md"
+        ]
+      }
+    ]
   }
 }
