@@ -1,0 +1,26 @@
+# Secrets — never commit a real key
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local vector index (rebuilt with `make ingest`)
+.chroma/
+
+# Model / HF caches
+.cache/
+
+# OS noise
+.DS_Store
+Thumbs.db
