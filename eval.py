@@ -23,6 +23,8 @@ import time
 from pathlib import Path
 
 from ponder.config import ASSETS_DIR, EVAL_FILE, has_llm_key
+
+HARD_FILE = EVAL_FILE.parent / "eval_hard.jsonl"
 from ponder.vectorstore import VectorStore
 
 KS = (1, 3, 5)
@@ -39,6 +41,7 @@ def load_eval(path: Path = EVAL_FILE) -> list[dict]:
 
 # --- Retrieval metrics -------------------------------------------------------
 def eval_retrieval(rows: list[dict], k: int = 5) -> dict:
+    rows = [r for r in rows if r.get("sources")]  # unanswerable rows have no gold source
     store = VectorStore()
     if store.count() == 0:
         raise RuntimeError("Index is empty. Run `python -m ponder.ingest` first.")
@@ -77,6 +80,16 @@ def eval_retrieval(rows: list[dict], k: int = 5) -> dict:
 
 
 # --- Answer quality (needs an LLM) ------------------------------------------
+def _abstain_schema():
+    from pydantic import BaseModel, Field
+
+    class Abstention(BaseModel):
+        abstained: bool = Field(description="True if the system clearly said the documents do not contain the answer, instead of inventing one.")
+        reasoning: str = Field(description="One short sentence.")
+
+    return Abstention
+
+
 def _judge_schema():
     from pydantic import BaseModel, Field
 
@@ -103,19 +116,43 @@ def eval_answers(rows: list[dict]) -> dict:
         "differences are fine; missing or wrong facts are not."
     )
 
+    Abstention = _abstain_schema()
+    abstain_judge = get_llm(temperature=0).with_structured_output(Abstention)
+
     scores: list[float] = []
     correct = 0
     latencies: list[float] = []
     costs: list[float] = []
     source_hits = 0
+    answerable = 0
+    unanswerable = 0
+    abstained = 0
+    all_gold_cited = 0
     details = []
 
     for i, row in enumerate(rows, start=1):
         result = ask(row["question"])
         latencies.append(result.latency_s)
         costs.append(result.cost_usd)
+
+        if row.get("type") == "unanswerable":
+            unanswerable += 1
+            verdict = abstain_judge.invoke(
+                [
+                    SystemMessage(content="You check whether a question-answering system abstained. The question has NO answer in its documents. Did the system say so clearly, rather than invent an answer?"),
+                    HumanMessage(content=f"Question:\n{row['question']}\n\nSystem answer:\n{result.answer}"),
+                ]
+            )
+            abstained += int(verdict.abstained)
+            print(f"  [{i}/{len(rows)}] {'ABSTAINED' if verdict.abstained else 'INVENTED '} {result.latency_s:.1f}s ${result.cost_usd:.4f}")
+            details.append({"question": row["question"], "type": "unanswerable", "abstained": verdict.abstained, "cited_sources": result.sources})
+            continue
+
+        answerable += 1
         if set(row["sources"]) & set(result.sources):
             source_hits += 1
+        if set(row["sources"]) <= set(result.sources):
+            all_gold_cited += 1
 
         verdict = judge.invoke(
             [
@@ -138,6 +175,7 @@ def eval_answers(rows: list[dict]) -> dict:
         details.append(
             {
                 "question": row["question"],
+                "type": row.get("type", "standard"),
                 "correct": verdict.correct,
                 "score": verdict.score,
                 "cited_sources": result.sources,
@@ -145,16 +183,22 @@ def eval_answers(rows: list[dict]) -> dict:
             }
         )
 
-    n = len(rows)
-    return {
-        "accuracy": round(correct / n, 3),
-        "mean_judge_score": round(statistics.mean(scores), 3),
-        "answer_source_hit_rate": round(source_hits / n, 3),
+    n = answerable
+    out = {
+        "n_answerable": n,
+        "accuracy": round(correct / n, 3) if n else None,
+        "mean_judge_score": round(statistics.mean(scores), 3) if scores else None,
+        "answer_source_hit_rate": round(source_hits / n, 3) if n else None,
+        "all_gold_sources_cited_rate": round(all_gold_cited / n, 3) if n else None,
         "e2e_latency_s_mean": round(statistics.mean(latencies), 2),
         "cost_usd_per_query_mean": round(statistics.mean(costs), 5),
         "cost_usd_total": round(sum(costs), 4),
         "details": details,
     }
+    if unanswerable:
+        out["n_unanswerable"] = unanswerable
+        out["abstention_rate"] = round(abstained / unanswerable, 3)
+    return out
 
 
 # --- Reporting ---------------------------------------------------------------
@@ -208,9 +252,11 @@ def main() -> None:
     parser.add_argument("--retrieval-only", action="store_true", help="Skip the LLM answer eval.")
     parser.add_argument("--limit", type=int, default=0, help="Only evaluate the first N questions.")
     parser.add_argument("--k", type=int, default=5, help="Top-k for retrieval metrics.")
+    parser.add_argument("--set", choices=["standard", "hard"], default="standard",
+                        help="'standard' = 18 in-domain questions; 'hard' = 10 paraphrased, multi-source and unanswerable questions.")
     args = parser.parse_args()
 
-    rows = load_eval()
+    rows = load_eval(HARD_FILE if args.set == "hard" else EVAL_FILE)
     if args.limit:
         rows = rows[: args.limit]
     print(f"Loaded {len(rows)} eval questions.\n")
@@ -239,14 +285,18 @@ def main() -> None:
             print(f"\n  accuracy: {a['accuracy']}")
             print(f"  mean judge score: {a['mean_judge_score']}")
             print(f"  answer source hit rate: {a['answer_source_hit_rate']}")
+            print(f"  all gold sources cited: {a['all_gold_sources_cited_rate']}")
+            if "abstention_rate" in a:
+                print(f"  abstention on unanswerable: {a['abstention_rate']} ({a['n_unanswerable']} questions)")
             print(f"  e2e latency: {a['e2e_latency_s_mean']} s/query")
             print(f"  cost: ${a['cost_usd_per_query_mean']}/query (total ${a['cost_usd_total']})")
 
-    out_json = ASSETS_DIR / "eval_results.json"
+    suffix = "" if args.set == "standard" else f"_{args.set}"
+    out_json = ASSETS_DIR / f"eval_results{suffix}.json"
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nResults written to {out_json}")
-    make_chart(results, ASSETS_DIR / "eval_recall.png")
+    make_chart(results, ASSETS_DIR / f"eval_recall{suffix}.png")
 
 
 if __name__ == "__main__":

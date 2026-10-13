@@ -112,6 +112,7 @@ your corpus.
 ```bash
 make eval-retrieval   # recall@k, MRR, latency — NO key needed
 make eval             # adds end-to-end accuracy (LLM-as-judge), latency & cost — needs your key
+make eval-hard        # paraphrase, multi-source and unanswerable questions (abstention rate) — needs your key
 make test             # run the test suite
 ```
 
@@ -154,6 +155,48 @@ Ponder's corrective rewrite loop is designed to recover.
 
 Reproduce with `make eval` (needs your key); raw numbers in `assets/eval_results.json`.
 
+### Hard set: paraphrase, multi-source, unanswerable (added 13 October 2026)
+
+The in-domain set above cannot catch the failures that matter in production, so a
+second set (`data/eval_hard.jsonl`, `make eval-hard`) asks 10 questions of three kinds:
+
+- **4 paraphrased, indirect questions** that share few words with the source document
+  (an "error code the vector search never finds", "why can't I run a cross-encoder over
+  the whole corpus").
+- **3 questions whose answer spans two documents** (e.g. factuality vs. faithfulness
+  hallucination *and* the guardrail that targets it).
+- **3 questions with no answer in the corpus** (a stock price, a model's parameter count).
+  The right answer is to say so.
+
+Measured on 13 October 2026 with `gpt-4o-mini` (the OpenAI fallback), raw numbers in
+`assets/eval_results_hard.json`:
+
+| Metric                                   | Value                 |
+|------------------------------------------|-----------------------|
+| recall@1 / recall@3 (7 answerable)       | 0.71 / **1.00**       |
+| MRR                                      | 0.83                  |
+| Accuracy (LLM-as-judge)                  | **0.86** (6/7)        |
+| Answer cites a gold source               | **100%** (7/7)        |
+| Multi-source: *all* gold sources cited   | **100%** (3/3)        |
+| Abstention on unanswerable questions     | **100%** (3/3)        |
+| Cost                                     | ~$0.0002 / query      |
+
+What it shows: paraphrase hurts first-pass retrieval (recall@1 drops from 0.94 to 0.71)
+but the corrective loop recovers every case by rank 3; multi-document questions cite
+both documents; and the system abstains instead of inventing when the corpus is silent.
+The one miss is a partial answer on prompt injection through MCP tool results (judge
+score 0.80: one of the two mitigations was left out).
+
+**Known gap, kept on purpose:** when Ponder abstains it still lists the retrieved files
+as "sources". An abstention should cite nothing. That is the next fix, and the hard set
+is there to prove it.
+
+**On models:** the 18-question numbers above were measured with Claude Sonnet 4.6. A
+re-run of the same set with `gpt-4o-mini` on 13 October 2026 gives 0.89 accuracy
+(16/18): one partial HNSW answer, and one chunking question answered from
+`context-windows.md` instead of `chunking-strategies.md`. The model matters; the
+harness is what stays.
+
 ---
 
 ## How it works (the code)
@@ -177,6 +220,7 @@ app.py             # Streamlit UI (live timeline + streaming answer)
 eval.py            # retrieval + answer-quality evaluation, charts
 data/corpus/       # ~40 original documents on LLM agents, RAG, and MCP
 data/eval.jsonl    # 18 reference Q/A pairs with gold sources
+data/eval_hard.jsonl # 10 paraphrased, multi-source and unanswerable questions
 tests/             # chunking, retrieval, and graph-routing tests
 ```
 
